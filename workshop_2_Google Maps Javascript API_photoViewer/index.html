@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<head>
+	<title>Workshop 2 - Flickr Discovery Tool</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<link rel='stylesheet' id='font-css'  href='http://fonts.googleapis.com/css?family=Roboto:400,300,100' type='text/css' media='all' />
+	<link rel='stylesheet' href='./css/style.css' type='text/css'/>
+</head>
+<body>
+<div id='wrapper'>
+     <div id='map-canvas'></div>
+	 <div id='title'>Workshop 2 - Flickr Discovery Tool</div>
+     <div id="displayWrapper">
+     		<div><span id="photoNum">0</span> photos returned</div>
+     </div>
+	 <div id="infoWrapper">
+			<div id="info">Info</div>
+			<div id="description">Welcome to Workshop 2 of Web Architecture. Today I'am going to learn the basics of JavaScript, how to debug a JavaScript program and build an interactive map to explore the Flickr photo data we uploaded into the MySQL database.</div>
+	</div>		
+</div>
+
+<!-- The Javascript from external websites gets Loaded Here -->
+
+
+<!-- Task 2.1:  Load jQuery here (below this line) -->
+
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCK_2YHUeL00WeSl7OSZCKATaHIH7cxKG4"> </script>
+<script type='text/javascript' src='./js/xdate.js'></script>
+<script type='text/javascript' src='./js/mapStyle.js'></script>
+<script type='text/javascript' src='https://code.jquery.com/jquery-3.5.1.js'></script>
+<script type='text/javascript' src='./js/interaction.js'></script>  <!-- Order matters! jquery file should by followed by my js file . -->
+
+
+
+<!-- The Javascript gets loaded here -->
+
+</body>
+</html>
