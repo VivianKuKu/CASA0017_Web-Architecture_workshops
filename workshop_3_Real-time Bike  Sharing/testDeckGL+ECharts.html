@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- DeckGL Library -->
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+
+    <!-- Mapbox Library -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+
+    <!--MapLibre-->
+    <script src="https://cdn.maptiler.com/maplibre-gl-js/v1.13.0-rc.4/mapbox-gl.js"></script>
+    <link href="https://cdn.maptiler.com/maplibre-gl-js/v1.13.0-rc.4/mapbox-gl.css" rel="stylesheet" />
+
+    <!--D3.js-->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!--ECharts-->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.1.2/dist/echarts.min.js"></script>
+
+    
+    <style type="text/css">
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        #container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #tooltip {
+            position: absolute;
+            visibility: hidden;
+            z-index: 2;
+            right: 0;
+            top: 30;
+            width: 20%;
+            height: auto;
+            min-height: 100px;
+
+            display: grid;
+            grid-template-columns: auto auto auto;
+            grid-template-rows: auto;
+            grid-template-areas:
+                "icon title title"
+                "item-a item-a ."
+                "item-b item-b ."
+                "item-c item-c item-c";
+
+            background-color: rgb(255, 216, 145);
+            border: 1px solid #888;
+            }
+
+        .title {
+        grid-area: title;
+        font-weight: bold;
+        margin: 4px;
+        }
+
+        .item-a {
+        grid-area: item-a;
+        margin: 4px;
+        }
+
+        .item-b {
+        grid-area: item-b;
+        margin: 4px;
+        }
+
+        #item-c {
+        grid-area: item-c;
+        margin: 4px;
+        height: 300px;
+        }
+
+        .icon {
+        grid-area: icon;
+        margin: 4px;
+        max-width: 50%;
+        height: auto;
+        place-self: center;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="map">
+            <div id="tooltip"></div>
+        </div>
+    </div>
+</body>
+
+<script>
+    
+    // Set your API key here
+    const API_KEY_HERE = 'lNyec9KYGm8XSoDRJtVpfas5pL2acoAg-79-CyTKV2E';
+
+    // Set up Hovering
+    let isHovering = false;
+
+    // Set Initial view state
+    const INITIAL_VIEW_STATE = {
+    longitude: -0.01132798084514334,
+    latitude: 51.54256346290661,
+    zoom: 15,
+    bearing: 30,
+    pitch: 45,
+    };
+
+
+    // MapBox Vector Tile + Here vector layer
+    const map = new mapboxgl.Map({
+    container: "map",
+    style:
+        "https://assets.vector.hereapi.com/styles/berlin/night/mapbox/tilezen?apikey=" +
+        API_KEY_HERE,
+    center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
+    zoom: INITIAL_VIEW_STATE.zoom,
+    bearing: INITIAL_VIEW_STATE.bearing,
+    pitch: INITIAL_VIEW_STATE.pitch,
+    });
+
+
+    // Load API request & BikeTFL layer
+    map.on("load", () => {
+        const BikeTFL = new deck.MapboxLayer({
+            id: "bike-tfl",
+            data: "https://api.tfl.gov.uk/BikePoint",
+            type: deck.ScatterplotLayer,
+            pickable: true,
+            opacity: 0.8,
+            stroked: true,
+            filled: true,
+            radiusScale: 50,
+            radiusMinPixels: 10,
+            radiusMaxPixels: 150,
+            lineWidthMinPixels: 1,
+            getPosition: (d) => [d.lon, d.lat],
+            getRadius: (d) => d.additionalProperties[6].value,
+            getFillColor: (d) => [255, 140, 0],
+            getLineColor: (d) => [0, 0, 30],
+            
+            // Add onHover interaction
+            onHover: ({ object }, info) => {
+            (isHovering = Boolean(object));
+            if (isHovering == true) {
+                console.log(object.additionalProperties[6].value);
+                map.getCanvas().style.cursor = 'pointer';
+                showTooltip(info, object);
+                }
+                else { hideTooltip(); }
+            },
+
+
+        });
+
+    map.addLayer(BikeTFL);
+
+    // Set interval
+    const timer = setInterval(() => {
+    BikeTFL.setProps({ data: "https://api.tfl.gov.uk/BikePoint" });
+    }, 300000); //API called every 5 min => 300000 ms
+  
+    })
+
+
+    // Use D3.js & Add Tooltip Function
+    function hideTooltip() {
+    d3.select("#tooltip").style("visibility", "hidden");
+    }
+
+    function showTooltip(info, object) {
+    d3
+        .select("#tooltip")
+        .style("top", (info.center.y + 3) + "px")
+        .style("left", (info.center.x) + "px")
+        .style("visibility", "visible")
+        .style("pointer-events", "none")
+        .html(`<img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/Cyclist_Icon_Germany_A1.svg" class='icon'/>
+                <p class='title'> ${object.commonName}</p>
+                <p class='item-a'> Free Bikes: ${object.additionalProperties[6].value}</p>
+                <p class='item-b'> Empty Docks: ${object.additionalProperties[7].value}</p>
+                <div id='item-c'></div>`);
+    chart(object);  
+    }
+
+    // Setup ECharts Function
+    function chart(dataset) {
+        var myChartEchart = echarts.init(document.getElementById("item-c"))
+
+        var option = {
+            title: {
+                text:dataset.commonName,
+                textStyle: {
+                color: "blue",
+                fontSize: 10,
+                fontWeight: "bold"},
+            },
+
+            xAxis: {
+                type: "category",
+            // data:[dataset.additionalProperties[6].key, dataset.additionalProperties[7].key],
+                data:['Free Bikes', 'Empty Docks'],
+                    axisLabel: {
+                    interval: 0,
+                    rotate: 30, //If the label names are too long you can manage this by rotating the label.
+                    fontSize: 10                }
+            },
+
+            yAxis: {
+                type: "value",
+                nameLocation: "center",
+                nameTextStyle: {
+                align: "center"}
+            },
+
+            series: [
+            {
+                type: 'bar',
+                name: '2015',
+                //data: [dataset.additionalProperties[6].value,dataset.additionalProperties[7].value]
+                data: [
+                        {
+                        value: dataset.additionalProperties[6].value,
+                        itemStyle: dataset.additionalProperties[6].value>5 ? {color: 'green'}:{color: 'red'}
+                        },
+                        {
+                        value: dataset.additionalProperties[7].value,
+                        itemStyle: dataset.additionalProperties[7].value>5 ? {color: 'green'}:{color: 'red'}
+                        }
+                    ]
+                }
+            ],
+        }
+    myChartEchart.setOption(option)
+
+    }
+
+    
+</script>
+
+
+</html>
